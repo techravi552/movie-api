@@ -1,52 +1,55 @@
-const express = require("express")
-const mongoose = require("mongoose")
-const cors = require("cors")
-require("dotenv").config()
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config();
 
-const Movie = require("./models/Movie")
+const app = express();
+const PORT = process.env.PORT || 5000;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-const app = express()
-app.use(cors())
-app.use(express.json())
+// ✅ Movie model
+const Movie = require("./models/Movie");
 
-mongoose.connect(process.env.MONGODB_URI)
+// ✅ Middleware
+app.use(cors({
+  origin: "http://localhost:3000", // React app allowed
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+app.use(express.json());
+
+// ✅ MongoDB Connect
+mongoose.connect(MONGODB_URI)
   .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.log("❌ DB Error", err))
+  .catch((err) => console.log("❌ DB Error", err));
 
+// ✅ Test route
 app.get("/", (req, res) => {
-  res.send("🎬 Movie API is working!")
-})
+  res.send("🎬 Movie API is running");
+});
 
-// ➕ Add Movie
+// ✅ Create Movie
 app.post("/movies", async (req, res) => {
   try {
-    const movie = new Movie(req.body)
-    await movie.save()
-    res.status(201).send({ message: "Movie Added", movie })
+    const movie = new Movie(req.body);
+    await movie.save();
+    res.status(201).json({ message: "✅ Movie added", movie });
   } catch (err) {
-    res.status(400).send({ error: "Failed to add movie" })
+    res.status(400).json({ error: "❌ Failed to add movie" });
   }
-})
+});
 
-// 📥 Get All Movies
+// ✅ Get All Movies
 app.get("/movies", async (req, res) => {
-  const movies = await Movie.find()
-  res.send(movies)
-})
+  try {
+    const movies = await Movie.find();
+    res.json(movies);
+  } catch (err) {
+    res.status(500).json({ error: "❌ Failed to fetch movies" });
+  }
+});
 
-// ✏️ Update Movie
-app.put("/movies/:id", async (req, res) => {
-  const updated = await Movie.findByIdAndUpdate(req.params.id, req.body, { new: true })
-  res.send({ message: "Movie Updated", updated })
-})
-
-// ❌ Delete Movie
-app.delete("/movies/:id", async (req, res) => {
-  await Movie.findByIdAndDelete(req.params.id)
-  res.send({ message: "Movie Deleted" })
-})
-
-const PORT = process.env.PORT || 5000
+// ✅ Start Server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`)
-})
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
